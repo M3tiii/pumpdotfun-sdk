@@ -6,7 +6,7 @@ node_modules
 test-ledger
 .yarn
 
-dist/
+#dist/
 
 .keys*/
 .keys*/**
