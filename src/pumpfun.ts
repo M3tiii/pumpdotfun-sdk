@@ -65,7 +65,6 @@ export class PumpFunSDK {
     buyAmountSol: bigint,
     sellAmountSol: bigint,
     slippageBasisPoints: bigint = 500n,
-    priorityFees?: PriorityFee,
     commitment: Commitment = 'processed',
     finality: Finality = 'confirmed',
   ) {
@@ -145,7 +144,7 @@ export class PumpFunSDK {
     let creationBlockHash;
     let tokenMetadata;
 
-    const create = async (createTokenMetadata): Promise<TransactionResult> => {
+    const create = async (createTokenMetadata: CreateTokenMetadata, priorityFees: PriorityFee): Promise<TransactionResult> => {
       if (creationBlockHash) throw Error('Token creation already done');
 
       const creationBlockHashPromise = this.connection.getLatestBlockhash(commitment); // async
@@ -188,7 +187,7 @@ export class PumpFunSDK {
       return createResults;
     }
 
-    const sell = async (): Promise<TransactionResult> => {
+    const sell = async (priorityFees: PriorityFee): Promise<TransactionResult> => {
       let sellResults = await sendTx(
         this.connection,
         sellTx,

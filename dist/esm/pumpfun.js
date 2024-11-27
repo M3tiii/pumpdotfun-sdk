@@ -21,7 +21,7 @@ export class PumpFunSDK {
         this.program = new Program(IDL, provider);
         this.connection = this.program.provider.connection;
     }
-    async loadTokenCreation(creator, mint, buyAmountSol, sellAmountSol, slippageBasisPoints = 500n, priorityFees, commitment = 'processed', finality = 'confirmed') {
+    async loadTokenCreation(creator, mint, buyAmountSol, sellAmountSol, slippageBasisPoints = 500n, commitment = 'processed', finality = 'confirmed') {
         const globalAccount = await this.getGlobalAccount(commitment);
         // prepare buy transaction
         let buyTx;
@@ -59,7 +59,7 @@ export class PumpFunSDK {
         await createProgram.instruction();
         let creationBlockHash;
         let tokenMetadata;
-        const create = async (createTokenMetadata) => {
+        const create = async (createTokenMetadata, priorityFees) => {
             if (creationBlockHash)
                 throw Error('Token creation already done');
             const creationBlockHashPromise = this.connection.getLatestBlockhash(commitment); // async
@@ -83,7 +83,7 @@ export class PumpFunSDK {
             let createResults = await sendTx(this.connection, newTx, creator.publicKey, [creator, mint], priorityFees, commitment, finality, creationBlockHash, true);
             return createResults;
         };
-        const sell = async () => {
+        const sell = async (priorityFees) => {
             let sellResults = await sendTx(this.connection, sellTx, creator.publicKey, [creator], priorityFees, commitment, finality, creationBlockHash, true);
             return sellResults;
         };

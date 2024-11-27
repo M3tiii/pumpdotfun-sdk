@@ -13,9 +13,9 @@ export declare class PumpFunSDK {
     program: Program<PumpFun>;
     connection: Connection;
     constructor(provider?: Provider);
-    loadTokenCreation(creator: Keypair, mint: Keypair, buyAmountSol: bigint, sellAmountSol: bigint, slippageBasisPoints?: bigint, priorityFees?: PriorityFee, commitment?: Commitment, finality?: Finality): Promise<{
-        create: (createTokenMetadata: any) => Promise<TransactionResult>;
-        sell: () => Promise<TransactionResult>;
+    loadTokenCreation(creator: Keypair, mint: Keypair, buyAmountSol: bigint, sellAmountSol: bigint, slippageBasisPoints?: bigint, commitment?: Commitment, finality?: Finality): Promise<{
+        create: (createTokenMetadata: CreateTokenMetadata, priorityFees: PriorityFee) => Promise<TransactionResult>;
+        sell: (priorityFees: PriorityFee) => Promise<TransactionResult>;
     }>;
     createAndBuy(creator: Keypair, mint: Keypair, createTokenMetadata: CreateTokenMetadata, buyAmountSol: bigint, slippageBasisPoints?: bigint, priorityFees?: PriorityFee, commitment?: Commitment, finality?: Finality): Promise<TransactionResult>;
     buy(buyer: Keypair, mint: PublicKey, buyAmountSol: bigint, slippageBasisPoints?: bigint, priorityFees?: PriorityFee, commitment?: Commitment, finality?: Finality): Promise<TransactionResult>;
