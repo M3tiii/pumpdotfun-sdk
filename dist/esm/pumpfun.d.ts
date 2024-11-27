@@ -13,7 +13,7 @@ export declare class PumpFunSDK {
     program: Program<PumpFun>;
     connection: Connection;
     constructor(provider?: Provider);
-    loadTokenCreation(creator: Keypair, mint: Keypair, buyAmountSol: bigint, sellAmountSol: bigint, slippageBasisPoints?: bigint, commitment?: Commitment, finality?: Finality): Promise<{
+    prepareTokenCreation(creator: Keypair, mint: Keypair, buyAmountSol: bigint, sellAmountSol: bigint, slippageBasisPoints?: bigint, commitment?: Commitment, finality?: Finality): Promise<{
         create: (createTokenMetadata: CreateTokenMetadata, priorityFees: PriorityFee) => Promise<TransactionResult>;
         sell: (priorityFees: PriorityFee) => Promise<TransactionResult>;
     }>;

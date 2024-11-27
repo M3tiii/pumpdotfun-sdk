@@ -39,7 +39,7 @@ export async function sendTx(
   commitment: Commitment = DEFAULT_COMMITMENT,
   finality: Finality = DEFAULT_FINALITY,
   blockHash?: string,
-  skipPreflight: boolean = false
+  skipPreflight: boolean = true
 ): Promise<TransactionResult> {
   let newTx = new Transaction();
 

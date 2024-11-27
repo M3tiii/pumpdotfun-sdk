@@ -24,7 +24,7 @@ class PumpFunSDK {
         this.program = new anchor_1.Program(IDL_1.IDL, provider);
         this.connection = this.program.provider.connection;
     }
-    async loadTokenCreation(creator, mint, buyAmountSol, sellAmountSol, slippageBasisPoints = 500n, commitment = 'processed', finality = 'confirmed') {
+    async prepareTokenCreation(creator, mint, buyAmountSol, sellAmountSol, slippageBasisPoints = 500n, commitment = 'processed', finality = 'confirmed') {
         const globalAccount = await this.getGlobalAccount(commitment);
         // prepare buy transaction
         let buyTx;

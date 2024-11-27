@@ -13,7 +13,7 @@ const calculateWithSlippageSell = (amount, basisPoints) => {
     return amount - (amount * basisPoints) / 10000n;
 };
 exports.calculateWithSlippageSell = calculateWithSlippageSell;
-async function sendTx(connection, tx, payer, signers, priorityFees, commitment = exports.DEFAULT_COMMITMENT, finality = exports.DEFAULT_FINALITY, blockHash, skipPreflight = false) {
+async function sendTx(connection, tx, payer, signers, priorityFees, commitment = exports.DEFAULT_COMMITMENT, finality = exports.DEFAULT_FINALITY, blockHash, skipPreflight = true) {
     let newTx = new web3_js_1.Transaction();
     if (priorityFees) {
         const modifyComputeUnits = web3_js_1.ComputeBudgetProgram.setComputeUnitLimit({

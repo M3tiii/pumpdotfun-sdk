@@ -59,7 +59,7 @@ export class PumpFunSDK {
     this.connection = this.program.provider.connection;
   }
 
-  async loadTokenCreation(
+  async prepareTokenCreation(
     creator: Keypair,
     mint: Keypair,
     buyAmountSol: bigint,

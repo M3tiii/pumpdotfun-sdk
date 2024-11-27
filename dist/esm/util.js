@@ -7,7 +7,7 @@ export const calculateWithSlippageBuy = (amount, basisPoints) => {
 export const calculateWithSlippageSell = (amount, basisPoints) => {
     return amount - (amount * basisPoints) / 10000n;
 };
-export async function sendTx(connection, tx, payer, signers, priorityFees, commitment = DEFAULT_COMMITMENT, finality = DEFAULT_FINALITY, blockHash, skipPreflight = false) {
+export async function sendTx(connection, tx, payer, signers, priorityFees, commitment = DEFAULT_COMMITMENT, finality = DEFAULT_FINALITY, blockHash, skipPreflight = true) {
     let newTx = new Transaction();
     if (priorityFees) {
         const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
