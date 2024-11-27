@@ -20748,7 +20748,7 @@ class PumpFunSDK {
             creationBlockHash = promisesResult[0].blockhash;
             tokenMetadata = promisesResult[1];
             // update create programs metadata args
-            createProgram.args([tokenMetadata.name, tokenMetadata.symbol, tokenMetadata.uri]);
+            createProgram.args([tokenMetadata.metadata.name, tokenMetadata.metadata.symbol, tokenMetadata.metadataUri]);
             // @ts-ignore use private props to speed up by omitting async call
             let createTx = createProgram._txFn(...createProgram._args, { accounts: createProgram._accounts,
                 // @ts-ignore
