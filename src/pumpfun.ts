@@ -59,6 +59,157 @@ export class PumpFunSDK {
     this.connection = this.program.provider.connection;
   }
 
+  async loadTokenCreation(
+    creator: Keypair,
+    mint: Keypair,
+    buyAmountSol: bigint,
+    sellAmountSol: bigint,
+    slippageBasisPoints: bigint = 500n,
+    priorityFees?: PriorityFee,
+    commitment: Commitment = 'processed',
+    finality: Finality = 'confirmed',
+  ) {
+    const globalAccount = await this.getGlobalAccount(commitment);
+
+    // prepare buy transaction
+    let buyTx;
+    let buyAmount;
+    let buyAmountWithSlippage;
+    if (buyAmountSol > 0) {
+      buyAmount = globalAccount.getInitialBuyPrice(buyAmountSol);
+      buyAmountWithSlippage = calculateWithSlippageBuy(
+        buyAmountSol,
+        slippageBasisPoints
+      );
+
+      buyTx = await this.getBuyInstructions(
+        creator.publicKey,
+        mint.publicKey,
+        globalAccount.feeRecipient,
+        buyAmount,
+        buyAmountWithSlippage
+      );
+    }
+
+    let sellTx;
+    if (sellAmountSol > 0) {
+      const sellAmount = BigInt(
+        Math.floor(
+          Number(buyAmount) / (Number(buyAmountSol) / Number(sellAmountSol))
+        )
+      );
+      const sellAmountWithSlippage = calculateWithSlippageSell(
+        sellAmountSol,
+        slippageBasisPoints
+      );
+      sellTx = await this.getSellInstructions(
+        creator.publicKey,
+        mint.publicKey,
+        globalAccount.feeRecipient,
+        sellAmount,
+        sellAmountWithSlippage
+      );
+    }
+
+    // prepare create program
+    const mplTokenMetadata = new PublicKey(MPL_TOKEN_METADATA_PROGRAM_ID);
+
+    const [metadataPDA] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(METADATA_SEED),
+        mplTokenMetadata.toBuffer(),
+        mint.publicKey.toBuffer(),
+      ],
+      mplTokenMetadata
+    );
+
+    const associatedBondingCurve = await getAssociatedTokenAddress(
+      mint.publicKey,
+      this.getBondingCurvePDA(mint.publicKey),
+      true
+    );
+
+    const createProgram = this.program.methods
+      .create('name', 'symbol', 'metadataUri')
+      .accounts({
+        mint: mint.publicKey,
+        associatedBondingCurve: associatedBondingCurve,
+        metadata: metadataPDA,
+        user: creator.publicKey,
+      })
+      .signers([mint])
+
+    // preload accounts
+    await createProgram.instruction(); 
+
+    let creationBlockHash;
+    let tokenMetadata;
+
+    const create = async (createTokenMetadata): Promise<TransactionResult> => {
+      if (creationBlockHash) throw Error('Token creation already done');
+
+      const creationBlockHashPromise = this.connection.getLatestBlockhash(commitment); // async
+      const tokenMetadataPromise = this.createTokenMetadata(createTokenMetadata); // async
+
+      const promisesResult = await Promise.all([creationBlockHashPromise, tokenMetadataPromise])
+
+      creationBlockHash = promisesResult[0].blockhash;
+      tokenMetadata = promisesResult[1];
+
+      // update create programs metadata args
+      createProgram.args([tokenMetadata.name, tokenMetadata.symbol, tokenMetadata.uri])
+
+      // @ts-ignore use private props to speed up by omitting async call
+      let createTx = createProgram._txFn( ...createProgram._args, { accounts: createProgram._accounts,
+        // @ts-ignore
+        signers: createProgram._signers, remainingAccounts: createProgram._remainingAccounts,
+        // @ts-ignore
+        preInstructions: createProgram._preInstructions, postInstructions: createProgram._postInstructions
+      });
+
+      let newTx = new Transaction().add(createTx);
+
+      if (buyTx) {
+        newTx.add(buyTx);
+      }
+
+      let createResults = await sendTx(
+        this.connection,
+        newTx,
+        creator.publicKey,
+        [creator, mint],
+        priorityFees,
+        commitment,
+        finality,
+        creationBlockHash,
+        true,
+      );
+
+      return createResults;
+    }
+
+    const sell = async (): Promise<TransactionResult> => {
+      let sellResults = await sendTx(
+        this.connection,
+        sellTx,
+        creator.publicKey,
+        [creator],
+        priorityFees,
+        commitment,
+        finality,
+        creationBlockHash,
+        true,
+      );
+
+      return sellResults;
+    }
+
+    return {
+      create,
+      sell
+    }
+  }
+
   async createAndBuy(
     creator: Keypair,
     mint: Keypair,
