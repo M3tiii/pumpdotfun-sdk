@@ -37,7 +37,9 @@ export async function sendTx(
   signers: Keypair[],
   priorityFees?: PriorityFee,
   commitment: Commitment = DEFAULT_COMMITMENT,
-  finality: Finality = DEFAULT_FINALITY
+  finality: Finality = DEFAULT_FINALITY,
+  skipPreflight: boolean = false,
+  blockhash?: string
 ): Promise<TransactionResult> {
   let newTx = new Transaction();
 
@@ -55,14 +57,14 @@ export async function sendTx(
 
   newTx.add(tx);
 
-  let versionedTx = await buildVersionedTx(connection, payer, newTx, commitment);
+  let versionedTx = await buildVersionedTx(connection, payer, newTx, commitment, blockhash);
   versionedTx.sign(signers);
 
   try {
     const sig = await connection.sendTransaction(versionedTx, {
-      skipPreflight: false,
+      skipPreflight,
     });
-    console.log("sig:", `https://solscan.io/tx/${sig}`);
+    console.log("Pumpfun | sig:", `https://solscan.io/tx/${sig}`);
 
     let txResult = await getTxDetails(connection, sig, commitment, finality);
     if (!txResult) {
@@ -94,10 +96,13 @@ export const buildVersionedTx = async (
   connection: Connection,
   payer: PublicKey,
   tx: Transaction,
-  commitment: Commitment = DEFAULT_COMMITMENT
+  commitment: Commitment = DEFAULT_COMMITMENT,
+  blockHash?: string
 ): Promise<VersionedTransaction> => {
-  const blockHash = (await connection.getLatestBlockhash(commitment))
-    .blockhash;
+  if (!blockHash) {
+    blockHash = (await connection.getLatestBlockhash(commitment))
+      .blockhash;
+  }
 
   let messageV0 = new TransactionMessage({
     payerKey: payer,

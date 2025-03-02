@@ -29,6 +29,7 @@ import {
   createAssociatedTokenAccountInstruction,
   getAccount,
   getAssociatedTokenAddress,
+  getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import { BondingCurveAccount } from "./bondingCurveAccount";
 import { BN } from "bn.js";
@@ -119,14 +120,23 @@ export class PumpFunSDK {
     slippageBasisPoints: bigint = 500n,
     priorityFees?: PriorityFee,
     commitment: Commitment = DEFAULT_COMMITMENT,
-    finality: Finality = DEFAULT_FINALITY
+    finality: Finality = DEFAULT_FINALITY,
+    skipPreflight: boolean = false,
+    cachedData?: {
+      blockHash?: string,
+      bondingCurveAccount?: BondingCurveAccount,
+      globalAccount?: GlobalAccount,
+      forceCreateAssociatedTokenAccount?: boolean
+    }
   ): Promise<TransactionResult> {
     let buyTx = await this.getBuyInstructionsBySolAmount(
       buyer.publicKey,
       mint,
       buyAmountSol,
       slippageBasisPoints,
-      commitment
+      commitment,
+      cachedData?.bondingCurveAccount,
+      cachedData?.globalAccount
     );
 
     let buyResults = await sendTx(
@@ -136,7 +146,9 @@ export class PumpFunSDK {
       [buyer],
       priorityFees,
       commitment,
-      finality
+      finality,
+      skipPreflight,
+      cachedData?.blockHash
     );
     return buyResults;
   }
@@ -148,14 +160,22 @@ export class PumpFunSDK {
     slippageBasisPoints: bigint = 500n,
     priorityFees?: PriorityFee,
     commitment: Commitment = DEFAULT_COMMITMENT,
-    finality: Finality = DEFAULT_FINALITY
+    finality: Finality = DEFAULT_FINALITY,
+    skipPreflight: boolean = false,
+    cachedData?: {
+      blockHash?: string,
+      bondingCurveAccount?: BondingCurveAccount,
+      globalAccount?: GlobalAccount
+    }
   ): Promise<TransactionResult> {
     let sellTx = await this.getSellInstructionsByTokenAmount(
       seller.publicKey,
       mint,
       sellTokenAmount,
       slippageBasisPoints,
-      commitment
+      commitment,
+      cachedData?.bondingCurveAccount,
+      cachedData?.globalAccount
     );
 
     let sellResults = await sendTx(
@@ -165,7 +185,9 @@ export class PumpFunSDK {
       [seller],
       priorityFees,
       commitment,
-      finality
+      finality,
+      skipPreflight,
+      cachedData?.blockHash
     );
     return sellResults;
   }
@@ -189,7 +211,7 @@ export class PumpFunSDK {
       mplTokenMetadata
     );
 
-    const associatedBondingCurve = await getAssociatedTokenAddress(
+    const associatedBondingCurve = getAssociatedTokenAddressSync(
       mint.publicKey,
       this.getBondingCurvePDA(mint.publicKey),
       true
@@ -212,12 +234,18 @@ export class PumpFunSDK {
     mint: PublicKey,
     buyAmountSol: bigint,
     slippageBasisPoints: bigint = 500n,
-    commitment: Commitment = DEFAULT_COMMITMENT
+    commitment: Commitment = DEFAULT_COMMITMENT,
+    bondingCurveAccount?: BondingCurveAccount | null,
+    globalAccount?: GlobalAccount,
+    forceCreateAssociatedTokenAccount: boolean = false,
   ) {
-    let bondingCurveAccount = await this.getBondingCurveAccount(
-      mint,
-      commitment
-    );
+    if (!bondingCurveAccount) {
+      bondingCurveAccount = await this.getBondingCurveAccount(
+        mint,
+        commitment
+      );
+    }
+
     if (!bondingCurveAccount) {
       throw new Error(`Bonding curve account not found: ${mint.toBase58()}`);
     }
@@ -228,14 +256,18 @@ export class PumpFunSDK {
       slippageBasisPoints
     );
 
-    let globalAccount = await this.getGlobalAccount(commitment);
+    if (!globalAccount) {
+      globalAccount = await this.getGlobalAccount(commitment);
+    }
 
     return await this.getBuyInstructions(
       buyer,
       mint,
       globalAccount.feeRecipient,
       buyAmount,
-      buyAmountWithSlippage
+      buyAmountWithSlippage,
+      commitment,
+      forceCreateAssociatedTokenAccount
     );
   }
 
@@ -246,19 +278,21 @@ export class PumpFunSDK {
     feeRecipient: PublicKey,
     amount: bigint,
     solAmount: bigint,
-    commitment: Commitment = DEFAULT_COMMITMENT
+    commitment: Commitment = DEFAULT_COMMITMENT,
+    forceCreateAssociatedTokenAccount = false
   ) {
-    const associatedBondingCurve = await getAssociatedTokenAddress(
+    const associatedBondingCurve = getAssociatedTokenAddressSync(
       mint,
       this.getBondingCurvePDA(mint),
       true
     );
 
-    const associatedUser = await getAssociatedTokenAddress(mint, buyer, false);
+    const associatedUser = getAssociatedTokenAddressSync(mint, buyer, false);
 
     let transaction = new Transaction();
 
     try {
+      if (forceCreateAssociatedTokenAccount) throw 'Forced associated account creation';
       await getAccount(this.connection, associatedUser, commitment);
     } catch (e) {
       transaction.add(
@@ -293,17 +327,24 @@ export class PumpFunSDK {
     mint: PublicKey,
     sellTokenAmount: bigint,
     slippageBasisPoints: bigint = 500n,
-    commitment: Commitment = DEFAULT_COMMITMENT
+    commitment: Commitment = DEFAULT_COMMITMENT,
+    bondingCurveAccount?: BondingCurveAccount | null,
+    globalAccount?: GlobalAccount,
   ) {
-    let bondingCurveAccount = await this.getBondingCurveAccount(
-      mint,
-      commitment
-    );
+    if (!bondingCurveAccount) {
+      bondingCurveAccount = await this.getBondingCurveAccount(
+        mint,
+        commitment
+      );
+    }
+
     if (!bondingCurveAccount) {
       throw new Error(`Bonding curve account not found: ${mint.toBase58()}`);
     }
 
-    let globalAccount = await this.getGlobalAccount(commitment);
+    if (!globalAccount) {
+      globalAccount = await this.getGlobalAccount(commitment);
+    }
 
     let minSolOutput = bondingCurveAccount.getSellPrice(
       sellTokenAmount,
