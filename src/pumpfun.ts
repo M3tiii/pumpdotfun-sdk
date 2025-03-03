@@ -136,7 +136,8 @@ export class PumpFunSDK {
       slippageBasisPoints,
       commitment,
       cachedData?.bondingCurveAccount,
-      cachedData?.globalAccount
+      cachedData?.globalAccount,
+      cachedData?.forceCreateAssociatedTokenAccount
     );
 
     let buyResults = await sendTx(
