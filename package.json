@@ -8,6 +8,7 @@
   "browser": "./dist/browser/index.js",
   "types": "dist/cjs/index.d.ts",
   "scripts": {
+    "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rimraf dist/ && npm run build:node && npm run build:browser",
     "build:node": "tsc && tsc -p tsconfig.cjs.json",
@@ -26,7 +27,7 @@
     "sdk",
     "solana"
   ],
-  "author": "",
+  "author": "Rick Porter, kalloc, Elijah Bare",
   "license": "ISC",
   "devDependencies": {
     "@coral-xyz/borsh": "^0.30.1",
