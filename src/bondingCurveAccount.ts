@@ -1,4 +1,5 @@
-import { struct, bool, u64, Layout } from "@coral-xyz/borsh";
+import { struct, bool, u64, Layout, publicKey } from "@coral-xyz/borsh";
+import { PublicKey } from "@solana/web3.js";
 
 export class BondingCurveAccount {
   public discriminator: bigint;
@@ -8,6 +9,7 @@ export class BondingCurveAccount {
   public realSolReserves: bigint;
   public tokenTotalSupply: bigint;
   public complete: boolean;
+  public creator: PublicKey;
 
   constructor(
     discriminator: bigint,
@@ -16,7 +18,8 @@ export class BondingCurveAccount {
     realTokenReserves: bigint,
     realSolReserves: bigint,
     tokenTotalSupply: bigint,
-    complete: boolean
+    complete: boolean,
+    creator: PublicKey
   ) {
     this.discriminator = discriminator;
     this.virtualTokenReserves = virtualTokenReserves;
@@ -25,6 +28,7 @@ export class BondingCurveAccount {
     this.realSolReserves = realSolReserves;
     this.tokenTotalSupply = tokenTotalSupply;
     this.complete = complete;
+    this.creator = creator;
   }
 
   getBuyPrice(amount: bigint): bigint {
@@ -118,6 +122,7 @@ export class BondingCurveAccount {
       u64("realSolReserves"),
       u64("tokenTotalSupply"),
       bool("complete"),
+      publicKey("creator")
     ]);
 
     let value = structure.decode(buffer);
@@ -128,7 +133,8 @@ export class BondingCurveAccount {
       BigInt(value.realTokenReserves),
       BigInt(value.realSolReserves),
       BigInt(value.tokenTotalSupply),
-      value.complete
+      value.complete,
+      value.creator
     );
   }
 }

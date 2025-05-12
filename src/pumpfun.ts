@@ -90,6 +90,7 @@ export class PumpFunSDK {
         slippageBasisPoints
       );
 
+      // @ts-ignore
       const buyTx = await this.getBuyInstructions(
         creator.publicKey,
         mint.publicKey,
@@ -137,7 +138,7 @@ export class PumpFunSDK {
       commitment,
       cachedData?.bondingCurveAccount,
       cachedData?.globalAccount,
-      cachedData?.forceCreateAssociatedTokenAccount
+      cachedData?.forceCreateAssociatedTokenAccount,
     );
 
     let buyResults = await sendTx(
@@ -219,9 +220,11 @@ export class PumpFunSDK {
     );
 
     return this.program.methods
+      // @ts-ignore
       .create(name, symbol, uri)
       .accounts({
         mint: mint.publicKey,
+        // @ts-ignore
         associatedBondingCurve: associatedBondingCurve,
         metadata: metadataPDA,
         user: creator,
@@ -268,8 +271,17 @@ export class PumpFunSDK {
       buyAmount,
       buyAmountWithSlippage,
       commitment,
-      forceCreateAssociatedTokenAccount
+      forceCreateAssociatedTokenAccount,
+      bondingCurveAccount.creator
     );
+  }
+
+  creatorVaultPda(creator: PublicKey) {
+    const [creatorVault] = PublicKey.findProgramAddressSync(
+      [Buffer.from("creator-vault"), creator.toBuffer()],
+      this.program.programId,
+    );
+    return creatorVault;
   }
 
   //buy
@@ -280,13 +292,9 @@ export class PumpFunSDK {
     amount: bigint,
     solAmount: bigint,
     commitment: Commitment = DEFAULT_COMMITMENT,
-    forceCreateAssociatedTokenAccount = false
+    forceCreateAssociatedTokenAccount = false,
+    bondingCurveCreator: PublicKey,
   ) {
-    const associatedBondingCurve = getAssociatedTokenAddressSync(
-      mint,
-      this.getBondingCurvePDA(mint),
-      true
-    );
 
     const associatedUser = getAssociatedTokenAddressSync(mint, buyer, false);
 
@@ -309,12 +317,12 @@ export class PumpFunSDK {
     transaction.add(
       await this.program.methods
         .buy(new BN(amount.toString()), new BN(solAmount.toString()))
-        .accounts({
+        .accountsPartial({
           feeRecipient: feeRecipient,
           mint: mint,
-          associatedBondingCurve: associatedBondingCurve,
           associatedUser: associatedUser,
           user: buyer,
+          creatorVault: this.creatorVaultPda(bondingCurveCreator),
         })
         .transaction()
     );
@@ -362,7 +370,7 @@ export class PumpFunSDK {
       mint,
       globalAccount.feeRecipient,
       sellTokenAmount,
-      sellAmountWithSlippage
+      sellAmountWithSlippage,
     );
   }
 
@@ -371,13 +379,8 @@ export class PumpFunSDK {
     mint: PublicKey,
     feeRecipient: PublicKey,
     amount: bigint,
-    minSolOutput: bigint
+    minSolOutput: bigint,
   ) {
-    const associatedBondingCurve = await getAssociatedTokenAddress(
-      mint,
-      this.getBondingCurvePDA(mint),
-      true
-    );
 
     const associatedUser = await getAssociatedTokenAddress(mint, seller, false);
 
@@ -386,10 +389,9 @@ export class PumpFunSDK {
     transaction.add(
       await this.program.methods
         .sell(new BN(amount.toString()), new BN(minSolOutput.toString()))
-        .accounts({
+        .accountsPartial({
           feeRecipient: feeRecipient,
           mint: mint,
-          associatedBondingCurve: associatedBondingCurve,
           associatedUser: associatedUser,
           user: seller,
         })
