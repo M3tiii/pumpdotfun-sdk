@@ -6,4 +6,4 @@ export * from './globalAccount'
 export * from './bondingCurveAccount'
 export * from './amm'
 
-console.log('You are using custom pump.fun sdk v2');
+console.log('You are using custom pump.fun sdk v3');
