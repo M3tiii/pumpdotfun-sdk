@@ -128,6 +128,98 @@ export type PumpFun = {
       ]
     },
     {
+      "name": "adminSetIdlAuthority",
+      "discriminator": [
+        8,
+        217,
+        96,
+        231,
+        144,
+        104,
+        192,
+        5
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "global"
+          ]
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "idlAccount",
+          "writable": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "programSigner",
+          "pda": {
+            "seeds": []
+          }
+        },
+        {
+          "name": "eventAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": [
+        {
+          "name": "idlAuthority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
       "name": "adminUpdateTokenIncentives",
       "discriminator": [
         209,
@@ -149,7 +241,22 @@ export type PumpFun = {
           ]
         },
         {
-          "name": "global"
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "globalVolumeAccumulator",
@@ -555,7 +662,8 @@ export type PumpFun = {
           }
         },
         {
-          "name": "program"
+          "name": "program",
+          "address": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
         },
         {
           "name": "globalVolumeAccumulator",
@@ -634,6 +742,75 @@ export type PumpFun = {
               }
             ]
           }
+        },
+        {
+          "name": "feeConfig",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  1,
+                  86,
+                  224,
+                  246,
+                  147,
+                  102,
+                  90,
+                  207,
+                  68,
+                  219,
+                  21,
+                  104,
+                  191,
+                  23,
+                  91,
+                  170,
+                  81,
+                  137,
+                  203,
+                  151,
+                  245,
+                  210,
+                  255,
+                  59,
+                  101,
+                  93,
+                  43,
+                  182,
+                  253,
+                  109,
+                  24,
+                  176
+                ]
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "feeProgram"
+            }
+          }
+        },
+        {
+          "name": "feeProgram",
+          "optional": true,
+          "address": "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ"
         }
       ],
       "args": [
@@ -644,6 +821,14 @@ export type PumpFun = {
         {
           "name": "maxSolCost",
           "type": "u64"
+        },
+        {
+          "name": "trackVolume",
+          "type": {
+            "defined": {
+              "name": "optionBool"
+            }
+          }
         }
       ]
     },
@@ -901,12 +1086,106 @@ export type PumpFun = {
           }
         },
         {
-          "name": "program"
+          "name": "program",
+          "address": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
         },
         {
           "name": "payer",
           "writable": true,
           "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closeUserVolumeAccumulator",
+      "discriminator": [
+        249,
+        69,
+        164,
+        218,
+        150,
+        103,
+        84,
+        138
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "userVolumeAccumulator",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  118,
+                  111,
+                  108,
+                  117,
+                  109,
+                  101,
+                  95,
+                  97,
+                  99,
+                  99,
+                  117,
+                  109,
+                  117,
+                  108,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "eventAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program"
         }
       ],
       "args": []
@@ -1351,6 +1630,106 @@ export type PumpFun = {
         {
           "name": "user",
           "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "eventAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  95,
+                  95,
+                  101,
+                  118,
+                  101,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initUserVolumeAccumulator",
+      "discriminator": [
+        94,
+        6,
+        202,
+        115,
+        255,
+        96,
+        232,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user"
+        },
+        {
+          "name": "userVolumeAccumulator",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  95,
+                  118,
+                  111,
+                  108,
+                  117,
+                  109,
+                  101,
+                  95,
+                  97,
+                  99,
+                  99,
+                  117,
+                  109,
+                  117,
+                  108,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
         },
         {
           "name": "systemProgram",
@@ -2190,7 +2569,77 @@ export type PumpFun = {
           }
         },
         {
-          "name": "program"
+          "name": "program",
+          "address": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+        },
+        {
+          "name": "feeConfig",
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  1,
+                  86,
+                  224,
+                  246,
+                  147,
+                  102,
+                  90,
+                  207,
+                  68,
+                  219,
+                  21,
+                  104,
+                  191,
+                  23,
+                  91,
+                  170,
+                  81,
+                  137,
+                  203,
+                  151,
+                  245,
+                  210,
+                  255,
+                  59,
+                  101,
+                  93,
+                  43,
+                  182,
+                  253,
+                  109,
+                  24,
+                  176
+                ]
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "feeProgram"
+            }
+          }
+        },
+        {
+          "name": "feeProgram",
+          "optional": true,
+          "address": "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ"
         }
       ],
       "args": [
@@ -2942,6 +3391,19 @@ export type PumpFun = {
       ]
     },
     {
+      "name": "feeConfig",
+      "discriminator": [
+        143,
+        52,
+        146,
+        187,
+        219,
+        123,
+        76,
+        155
+      ]
+    },
+    {
       "name": "global",
       "discriminator": [
         167,
@@ -2996,6 +3458,19 @@ export type PumpFun = {
       ]
     },
     {
+      "name": "adminSetIdlAuthorityEvent",
+      "discriminator": [
+        245,
+        59,
+        70,
+        34,
+        75,
+        185,
+        109,
+        92
+      ]
+    },
+    {
       "name": "adminUpdateTokenIncentivesEvent",
       "discriminator": [
         147,
@@ -3019,6 +3494,19 @@ export type PumpFun = {
         91,
         206,
         232
+      ]
+    },
+    {
+      "name": "closeUserVolumeAccumulatorEvent",
+      "discriminator": [
+        146,
+        159,
+        189,
+        172,
+        146,
+        88,
+        56,
+        244
       ]
     },
     {
@@ -3084,6 +3572,19 @@ export type PumpFun = {
         146,
         22,
         124
+      ]
+    },
+    {
+      "name": "initUserVolumeAccumulatorEvent",
+      "discriminator": [
+        134,
+        36,
+        13,
+        72,
+        232,
+        101,
+        130,
+        216
       ]
     },
     {
@@ -3392,6 +3893,18 @@ export type PumpFun = {
       }
     },
     {
+      "name": "adminSetIdlAuthorityEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "idlAuthority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "adminUpdateTokenIncentivesEvent",
       "type": {
         "kind": "struct",
@@ -3411,6 +3924,18 @@ export type PumpFun = {
           {
             "name": "tokenSupplyPerDay",
             "type": "u64"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "secondsInADay",
+            "type": "i64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }
@@ -3467,6 +3992,50 @@ export type PumpFun = {
           {
             "name": "amount",
             "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "totalClaimedTokens",
+            "type": "u64"
+          },
+          {
+            "name": "currentSolVolume",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "closeUserVolumeAccumulatorEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "totalUnclaimedTokens",
+            "type": "u64"
+          },
+          {
+            "name": "totalClaimedTokens",
+            "type": "u64"
+          },
+          {
+            "name": "currentSolVolume",
+            "type": "u64"
+          },
+          {
+            "name": "lastUpdateTimestamp",
+            "type": "i64"
           }
         ]
       }
@@ -3640,6 +4209,80 @@ export type PumpFun = {
       }
     },
     {
+      "name": "feeConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "flatFees",
+            "type": {
+              "defined": {
+                "name": "fees"
+              }
+            }
+          },
+          {
+            "name": "feeTiers",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "feeTier"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "feeTier",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketCapLamportsThreshold",
+            "type": "u128"
+          },
+          {
+            "name": "fees",
+            "type": {
+              "defined": {
+                "name": "fees"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "fees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lpFeeBps",
+            "type": "u64"
+          },
+          {
+            "name": "protocolFeeBps",
+            "type": "u64"
+          },
+          {
+            "name": "creatorFeeBps",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "global",
       "type": {
         "kind": "struct",
@@ -3757,6 +4400,35 @@ export type PumpFun = {
               ]
             }
           }
+        ]
+      }
+    },
+    {
+      "name": "initUserVolumeAccumulatorEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "payer",
+            "type": "pubkey"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "optionBool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          "bool"
         ]
       }
     },
@@ -3897,6 +4569,10 @@ export type PumpFun = {
           {
             "name": "totalClaimedTokensAfter",
             "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }
@@ -3969,6 +4645,26 @@ export type PumpFun = {
           {
             "name": "creatorFee",
             "type": "u64"
+          },
+          {
+            "name": "trackVolume",
+            "type": "bool"
+          },
+          {
+            "name": "totalUnclaimedTokens",
+            "type": "u64"
+          },
+          {
+            "name": "totalClaimedTokens",
+            "type": "u64"
+          },
+          {
+            "name": "currentSolVolume",
+            "type": "u64"
+          },
+          {
+            "name": "lastUpdateTimestamp",
+            "type": "i64"
           }
         ]
       }
