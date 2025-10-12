@@ -462,7 +462,7 @@ export class PumpFunSDK {
       globalAccount.feeRecipient,
       sellTokenAmount,
       sellAmountWithSlippage
-    ).then(ins => [ins]);
+    )
   }
 
   async getSellInstructions(
@@ -508,7 +508,8 @@ export class PumpFunSDK {
         associatedUser: associatedUser,
         user: seller,
       })
-      .instruction();
+      .instruction()
+      .then(ins => [ins]);
   }
 
   async getBondingCurveAccount(
