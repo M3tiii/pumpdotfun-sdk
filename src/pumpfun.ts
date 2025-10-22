@@ -5,6 +5,7 @@ import {
   Keypair,
   PublicKey,
   Transaction,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import { Program, Provider } from "@coral-xyz/anchor";
 import { GlobalAccount } from "./globalAccount";
@@ -51,6 +52,33 @@ export const BONDING_CURVE_SEED = "bonding-curve";
 export const METADATA_SEED = "metadata";
 
 export const DEFAULT_DECIMALS = 6;
+
+const staticAccounts = {
+  global: new PublicKey("4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf"),
+  systemProgram: new PublicKey("11111111111111111111111111111111"),
+  tokenProgram: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+  eventAuthority: new PublicKey("Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1"),
+  associatedProgramId: new PublicKey([
+    140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11,
+    90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89,
+  ]),
+  programId: new PublicKey(PROGRAM_ID),
+  globalVolumeAccumulator: new PublicKey(
+    "Hq2wp8uJ9jCPsYgNHex8RtqdvMPfVGoYwjvF1ATiwn2Y"
+  ),
+  feeConfig: new PublicKey("8Wf5TiAheLUqBrKXeYg2JtAFFMWtKdG2BSFgqUcPVwTt"),
+  feeProgram: new PublicKey("pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ"),
+};
+
+const staticBuffers = {
+  bondingCurve: Buffer.from("bonding-curve"),
+  creatorVault: Buffer.from("creator-vault"),
+  seed: Buffer.from([
+    6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172,
+    28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169,
+  ]),
+  userVolumeAccumulator: Buffer.from("user_volume_accumulator"),
+};
 
 export class PumpFunSDK {
   public program: Program<PumpFun>;
@@ -359,8 +387,8 @@ export class PumpFunSDK {
     return transaction;
   }
 
-  //buy sync
-  async getBuyInstructionsSync(
+  // buy sync
+  getBuyInstructionsSync(
     buyer: PublicKey,
     mint: PublicKey,
     feeRecipient: PublicKey,
@@ -382,17 +410,122 @@ export class PumpFunSDK {
       );
     }
 
-    return this.program.methods
-      .buy(new BN(amount.toString()), new BN(solAmount.toString()), { 0: true })
-      .accountsPartial({
-        feeRecipient: feeRecipient,
-        mint: mint,
-        associatedUser: associatedUser,
-        user: buyer,
-        creatorVault: this.creatorVaultPda(bondingCurveCreator),
-      })
-      .instruction()
-      .then((ins) => (ataIns ? [ataIns, ins] : [ins]));
+    const data = this.program.coder.instruction.encode("buy", {
+      amount: new BN(amount.toString()),
+      maxSolCost: new BN(solAmount.toString()),
+      trackVolume: { some: true },
+    });
+
+    const [bondingCurve] = PublicKey.findProgramAddressSync(
+      [staticBuffers.bondingCurve, mint.toBuffer()],
+      this.program.programId
+    );
+
+    const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
+      [bondingCurve.toBuffer(), staticBuffers.seed, mint.toBuffer()],
+      staticAccounts.associatedProgramId
+    );
+
+    const [creatorVault] = PublicKey.findProgramAddressSync(
+      [staticBuffers.creatorVault, bondingCurveCreator.toBuffer()],
+      this.program.programId
+    );
+
+    const [userVolumeAccumulator] = PublicKey.findProgramAddressSync(
+      [staticBuffers.userVolumeAccumulator, buyer.toBuffer()],
+      this.program.programId
+    );
+
+    const keys = [
+      {
+        pubkey: staticAccounts.global,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: feeRecipient,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: mint,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: bondingCurve,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: associatedBondingCurve,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: associatedUser,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: buyer,
+        isSigner: true,
+        isWritable: true,
+      },
+      {
+        pubkey: staticAccounts.systemProgram,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: staticAccounts.tokenProgram,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: creatorVault,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: staticAccounts.eventAuthority,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: staticAccounts.programId,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: staticAccounts.globalVolumeAccumulator,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: userVolumeAccumulator,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: staticAccounts.feeConfig,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: staticAccounts.feeProgram,
+        isSigner: false,
+        isWritable: false,
+      },
+    ];
+
+    const buyIns = new TransactionInstruction({
+      programId: this.program.programId,
+      keys,
+      data,
+    });
+
+    return ataIns ? [ataIns, buyIns] : [buyIns];
   }
 
   //sell
@@ -461,8 +594,9 @@ export class PumpFunSDK {
       mint,
       globalAccount.feeRecipient,
       sellTokenAmount,
-      sellAmountWithSlippage
-    )
+      sellAmountWithSlippage,
+      bondingCurveAccount.creator,
+    );
   }
 
   async getSellInstructions(
@@ -491,25 +625,118 @@ export class PumpFunSDK {
     return transaction;
   }
 
-  async getSellInstructionsSync(
+  // sell sync
+  getSellInstructionsSync(
     seller: PublicKey,
     mint: PublicKey,
     feeRecipient: PublicKey,
     amount: bigint,
-    minSolOutput: bigint
+    minSolOutput: bigint,
+    bondingCurveCreator: PublicKey
   ) {
     const associatedUser = getAssociatedTokenAddressSync(mint, seller, false);
 
-    return this.program.methods
-      .sell(new BN(amount.toString()), new BN(minSolOutput.toString()))
-      .accountsPartial({
-        feeRecipient: feeRecipient,
-        mint: mint,
-        associatedUser: associatedUser,
-        user: seller,
-      })
-      .instruction()
-      .then(ins => [ins]);
+    const data = this.program.coder.instruction.encode("sell", {
+      amount: new BN(amount.toString()),
+      minSolOutput: new BN(minSolOutput.toString()),
+    });
+
+    const [bondingCurve] = PublicKey.findProgramAddressSync(
+      [staticBuffers.bondingCurve, mint.toBuffer()],
+      this.program.programId
+    );
+
+    const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
+      [bondingCurve.toBuffer(), staticBuffers.seed, mint.toBuffer()],
+      staticAccounts.associatedProgramId
+    );
+
+    const [creatorVault] = PublicKey.findProgramAddressSync(
+      [staticBuffers.creatorVault, bondingCurveCreator.toBuffer()],
+      this.program.programId
+    );
+
+    const keys = [
+      {
+        pubkey: staticAccounts.global,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: feeRecipient,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: mint,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: bondingCurve,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: associatedBondingCurve,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: associatedUser,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: seller,
+        isSigner: true,
+        isWritable: true,
+      },
+      {
+        pubkey: staticAccounts.systemProgram,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: creatorVault,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: staticAccounts.tokenProgram,
+        isSigner: false,
+        isWritable: false,
+      },
+
+      {
+        pubkey: staticAccounts.eventAuthority,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: staticAccounts.programId,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: staticAccounts.feeConfig,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: staticAccounts.feeProgram,
+        isSigner: false,
+        isWritable: false,
+      },
+    ];
+
+    const sellIns = new TransactionInstruction({
+      programId: this.program.programId,
+      keys,
+      data,
+    });
+
+    return [sellIns];
   }
 
   async getBondingCurveAccount(
