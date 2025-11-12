@@ -27,10 +27,12 @@ import {
   toTradeEvent,
 } from "./events";
 import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
   getAccount,
-  getAssociatedTokenAddress,
   getAssociatedTokenAddressSync,
+  TOKEN_2022_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BondingCurveAccount } from "./bondingCurveAccount";
 import { BN } from "bn.js";
@@ -65,7 +67,7 @@ const staticAccounts = {
     140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11,
     90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89,
   ]),
-  mayhemProgramId: new PublicKey('MAyhSmzXzV1pTf7LsNkrNwkWKTo4ougAJ1PPg47MD4e'),
+  mayhemProgramId: new PublicKey("MAyhSmzXzV1pTf7LsNkrNwkWKTo4ougAJ1PPg47MD4e"),
   programId: new PublicKey(PROGRAM_ID),
   globalVolumeAccumulator: new PublicKey(
     "Hq2wp8uJ9jCPsYgNHex8RtqdvMPfVGoYwjvF1ATiwn2Y"
@@ -84,6 +86,8 @@ const staticBuffers = {
     6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172,
     28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169,
   ]),
+  token2022: TOKEN_2022_PROGRAM_ID.toBuffer(),
+  tokenProgram: TOKEN_PROGRAM_ID.toBuffer(),
   userVolumeAccumulator: Buffer.from("user_volume_accumulator"),
 };
 
@@ -312,7 +316,8 @@ export class PumpFunSDK {
       buyAmountWithSlippage,
       commitment,
       forceCreateAssociatedTokenAccount,
-      bondingCurveAccount.creator
+      bondingCurveAccount.creator,
+      bondingCurveAccount.isMayhemMode
     );
   }
 
@@ -362,9 +367,18 @@ export class PumpFunSDK {
     solAmount: bigint,
     commitment: Commitment = DEFAULT_COMMITMENT,
     forceCreateAssociatedTokenAccount = false,
-    bondingCurveCreator: PublicKey
+    bondingCurveCreator: PublicKey,
+    isMayhemMode: boolean
   ) {
-    const associatedUser = getAssociatedTokenAddressSync(mint, buyer, false);
+    const tokenProgram = isMayhemMode
+      ? TOKEN_2022_PROGRAM_ID
+      : TOKEN_PROGRAM_ID;
+    const associatedUser = getAssociatedTokenAddressSync(
+      mint,
+      buyer,
+      false,
+      tokenProgram
+    );
 
     let transaction = new Transaction();
 
@@ -378,7 +392,8 @@ export class PumpFunSDK {
           buyer,
           associatedUser,
           buyer,
-          mint
+          mint,
+          tokenProgram
         )
       );
     }
@@ -413,7 +428,15 @@ export class PumpFunSDK {
     bondingCurveCreator: PublicKey,
     isMayhemMode: boolean
   ) {
-    const associatedUser = getAssociatedTokenAddressSync(mint, buyer, false);
+    const [associatedUser] = PublicKey.findProgramAddressSync(
+      [
+        buyer.toBuffer(),
+        isMayhemMode ? staticBuffers.token2022 : staticBuffers.tokenProgram,
+        mint.toBuffer(),
+      ],
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+
     let ataIns;
 
     if (createAssociatedTokenAccount) {
@@ -421,7 +444,8 @@ export class PumpFunSDK {
         buyer,
         associatedUser,
         buyer,
-        mint
+        mint,
+        isMayhemMode ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID
       );
     }
 
@@ -437,8 +461,12 @@ export class PumpFunSDK {
     );
 
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
-      [bondingCurve.toBuffer(), staticBuffers.seed, mint.toBuffer()],
-      isMayhemMode ? staticAccounts.mayhemProgramId : staticAccounts.associatedProgramId
+      [
+        bondingCurve.toBuffer(),
+        isMayhemMode ? staticBuffers.token2022 : staticBuffers.seed,
+        mint.toBuffer(),
+      ],
+      staticAccounts.associatedProgramId
     );
 
     const [creatorVault] = PublicKey.findProgramAddressSync(
@@ -589,7 +617,8 @@ export class PumpFunSDK {
       mint,
       feeRecipient,
       sellTokenAmount,
-      sellAmountWithSlippage
+      sellAmountWithSlippage,
+      bondingCurveAccount.isMayhemMode,
     );
   }
 
@@ -629,9 +658,11 @@ export class PumpFunSDK {
     mint: PublicKey,
     feeRecipient: PublicKey,
     amount: bigint,
-    minSolOutput: bigint
+    minSolOutput: bigint,
+    isMayhemMode: boolean,
   ) {
-    const associatedUser = getAssociatedTokenAddressSync(mint, seller, false);
+    const tokenProgram = isMayhemMode ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID;
+    const associatedUser = getAssociatedTokenAddressSync(mint, seller, false, tokenProgram);
 
     let transaction = new Transaction();
 
@@ -660,7 +691,14 @@ export class PumpFunSDK {
     bondingCurveCreator: PublicKey,
     isMayhemMode: boolean
   ) {
-    const associatedUser = getAssociatedTokenAddressSync(mint, seller, false);
+    const [associatedUser] = PublicKey.findProgramAddressSync(
+      [
+        seller.toBuffer(),
+        isMayhemMode ? staticBuffers.token2022 : staticBuffers.tokenProgram,
+        mint.toBuffer(),
+      ],
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
 
     const data = this.program.coder.instruction.encode("sell", {
       amount: new BN(amount.toString()),
@@ -673,8 +711,12 @@ export class PumpFunSDK {
     );
 
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
-      [bondingCurve.toBuffer(), staticBuffers.seed, mint.toBuffer()],
-      isMayhemMode ? staticAccounts.mayhemProgramId : staticAccounts.associatedProgramId
+      [
+        bondingCurve.toBuffer(),
+        isMayhemMode ? staticBuffers.token2022 : staticBuffers.seed,
+        mint.toBuffer(),
+      ],
+      staticAccounts.associatedProgramId
     );
 
     const [creatorVault] = PublicKey.findProgramAddressSync(
