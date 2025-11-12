@@ -65,6 +65,7 @@ const staticAccounts = {
     140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11,
     90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89,
   ]),
+  mayhemProgramId: new PublicKey('MAyhSmzXzV1pTf7LsNkrNwkWKTo4ougAJ1PPg47MD4e'),
   programId: new PublicKey(PROGRAM_ID),
   globalVolumeAccumulator: new PublicKey(
     "Hq2wp8uJ9jCPsYgNHex8RtqdvMPfVGoYwjvF1ATiwn2Y"
@@ -437,7 +438,7 @@ export class PumpFunSDK {
 
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
       [bondingCurve.toBuffer(), staticBuffers.seed, mint.toBuffer()],
-      staticAccounts.associatedProgramId
+      isMayhemMode ? staticAccounts.mayhemProgramId : staticAccounts.associatedProgramId
     );
 
     const [creatorVault] = PublicKey.findProgramAddressSync(
@@ -673,7 +674,7 @@ export class PumpFunSDK {
 
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
       [bondingCurve.toBuffer(), staticBuffers.seed, mint.toBuffer()],
-      staticAccounts.associatedProgramId
+      isMayhemMode ? staticAccounts.mayhemProgramId : staticAccounts.associatedProgramId
     );
 
     const [creatorVault] = PublicKey.findProgramAddressSync(
