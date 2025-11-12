@@ -374,6 +374,7 @@ export class PumpFunSDK {
     const tokenProgram = isMayhemMode
       ? TOKEN_2022_PROGRAM_ID
       : TOKEN_PROGRAM_ID;
+
     const associatedUser = getAssociatedTokenAddressSync(
       mint,
       buyer,
@@ -399,6 +400,20 @@ export class PumpFunSDK {
       );
     }
 
+    const [bondingCurve] = PublicKey.findProgramAddressSync(
+      [staticBuffers.bondingCurve, mint.toBuffer()],
+      this.program.programId
+    );
+
+    const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
+      [
+        bondingCurve.toBuffer(),
+        isMayhemMode ? staticBuffers.token2022 : staticBuffers.seed,
+        mint.toBuffer(),
+      ],
+      staticAccounts.associatedProgramId
+    );
+
     transaction.add(
       await this.program.methods
         .buy(new BN(amount.toString()), new BN(solAmount.toString()), {
@@ -407,7 +422,9 @@ export class PumpFunSDK {
         .accountsPartial({
           feeRecipient: feeRecipient,
           mint: mint,
-          associatedUser: associatedUser,
+          tokenProgram,
+          associatedUser,
+          associatedBondingCurve,
           user: buyer,
           creatorVault: this.creatorVaultPda(bondingCurveCreator),
         })
@@ -619,7 +636,7 @@ export class PumpFunSDK {
       feeRecipient,
       sellTokenAmount,
       sellAmountWithSlippage,
-      bondingCurveAccount.isMayhemMode,
+      bondingCurveAccount.isMayhemMode
     );
   }
 
@@ -660,10 +677,32 @@ export class PumpFunSDK {
     feeRecipient: PublicKey,
     amount: bigint,
     minSolOutput: bigint,
-    isMayhemMode: boolean,
+    isMayhemMode: boolean
   ) {
-    const tokenProgram = isMayhemMode ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID;
-    const associatedUser = getAssociatedTokenAddressSync(mint, seller, false, tokenProgram);
+    const tokenProgram = isMayhemMode
+      ? TOKEN_2022_PROGRAM_ID
+      : TOKEN_PROGRAM_ID;
+
+    const associatedUser = getAssociatedTokenAddressSync(
+      mint,
+      seller,
+      false,
+      tokenProgram
+    );
+
+    const [bondingCurve] = PublicKey.findProgramAddressSync(
+      [staticBuffers.bondingCurve, mint.toBuffer()],
+      this.program.programId
+    );
+
+    const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
+      [
+        bondingCurve.toBuffer(),
+        isMayhemMode ? staticBuffers.token2022 : staticBuffers.seed,
+        mint.toBuffer(),
+      ],
+      staticAccounts.associatedProgramId
+    );
 
     let transaction = new Transaction();
 
@@ -673,7 +712,9 @@ export class PumpFunSDK {
         .accountsPartial({
           feeRecipient: feeRecipient,
           mint: mint,
-          associatedUser: associatedUser,
+          tokenProgram,
+          associatedUser,
+          associatedBondingCurve,
           user: seller,
         })
         .transaction()
