@@ -28,6 +28,7 @@ import {
 } from "./events";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountIdempotentInstruction,
   createAssociatedTokenAccountInstruction,
   getAccount,
   getAssociatedTokenAddressSync,
@@ -440,7 +441,7 @@ export class PumpFunSDK {
     let ataIns;
 
     if (createAssociatedTokenAccount) {
-      ataIns = createAssociatedTokenAccountInstruction(
+      ataIns = createAssociatedTokenAccountIdempotentInstruction(
         buyer,
         associatedUser,
         buyer,
