@@ -485,7 +485,7 @@ export class PumpFunSDK {
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
       [
         bondingCurve.toBuffer(),
-        isMayhemMode ? staticBuffers.token2022 : staticBuffers.tokenProgram,
+        isTokenV2 ? staticBuffers.token2022 : staticBuffers.tokenProgram,
         mint.toBuffer(),
       ],
       staticAccounts.associatedProgramId
