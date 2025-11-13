@@ -301,7 +301,7 @@ export class PumpFunSDK {
     );
 
     let feeRecipient;
-    if (isTokenV2) {
+    if (bondingCurveAccount.isMayhemMode) {
       feeRecipient = staticAccounts.mayhemFeeRecipient;
     } else {
       if (!globalAccount) {
@@ -349,7 +349,8 @@ export class PumpFunSDK {
       commitment,
       forceCreateAssociatedTokenAccount,
       bondingCurveAccount.creator,
-      isTokenV2
+      isTokenV2,
+      bondingCurveAccount.isMayhemMode,
     );
   }
 
@@ -446,7 +447,8 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     createAssociatedTokenAccount = true,
     bondingCurveCreator: PublicKey,
-    isTokenV2: boolean
+    isTokenV2: boolean,
+    isMayhemMode: boolean,
   ) {
     const [associatedUser] = PublicKey.findProgramAddressSync(
       [
@@ -483,7 +485,7 @@ export class PumpFunSDK {
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
       [
         bondingCurve.toBuffer(),
-        isTokenV2 ? staticBuffers.token2022 : staticBuffers.tokenProgram,
+        isMayhemMode ? staticBuffers.token2022 : staticBuffers.tokenProgram,
         mint.toBuffer(),
       ],
       staticAccounts.associatedProgramId
@@ -506,7 +508,7 @@ export class PumpFunSDK {
         isWritable: false,
       },
       {
-        pubkey: isTokenV2 ? staticAccounts.mayhemFeeRecipient : feeRecipient,
+        pubkey: isMayhemMode ? staticAccounts.mayhemFeeRecipient : feeRecipient,
         isSigner: false,
         isWritable: true,
       },
@@ -627,7 +629,7 @@ export class PumpFunSDK {
     );
 
     let feeRecipient;
-    if (isTokenV2) {
+    if (bondingCurveAccount.isMayhemMode) {
       feeRecipient = staticAccounts.mayhemFeeRecipient;
     } else {
       feeRecipient = globalAccount.feeRecipient;
@@ -672,6 +674,7 @@ export class PumpFunSDK {
       sellAmountWithSlippage,
       bondingCurveAccount.creator,
       isTokenV2,
+      bondingCurveAccount.isMayhemMode,
     );
   }
 
@@ -735,7 +738,8 @@ export class PumpFunSDK {
     amount: bigint,
     minSolOutput: bigint,
     bondingCurveCreator: PublicKey,
-    isTokenV2: boolean
+    isTokenV2: boolean,
+    isMayhemMode: boolean,
   ) {
     const [associatedUser] = PublicKey.findProgramAddressSync(
       [
@@ -777,7 +781,7 @@ export class PumpFunSDK {
         isWritable: false,
       },
       {
-        pubkey: isTokenV2 ? staticAccounts.mayhemFeeRecipient : feeRecipient,
+        pubkey: isMayhemMode ? staticAccounts.mayhemFeeRecipient : feeRecipient,
         isSigner: false,
         isWritable: true,
       },

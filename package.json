@@ -1,6 +1,6 @@
 {
   "name": "pumpdotfun-sdk",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "description": "A simple SDK for interacting with pumpdotfun",
   
   "module": "./dist/esm/index.js",
