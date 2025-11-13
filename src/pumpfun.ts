@@ -83,10 +83,6 @@ const staticAccounts = {
 const staticBuffers = {
   bondingCurve: Buffer.from("bonding-curve"),
   creatorVault: Buffer.from("creator-vault"),
-  seed: Buffer.from([
-    6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172,
-    28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169,
-  ]),
   token2022: TOKEN_2022_PROGRAM_ID.toBuffer(),
   tokenProgram: TOKEN_PROGRAM_ID.toBuffer(),
   userVolumeAccumulator: Buffer.from("user_volume_accumulator"),
@@ -163,6 +159,7 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY,
     skipPreflight: boolean = false,
+    isTokenV2: boolean = true,
     cachedData?: {
       blockHash?: string;
       bondingCurveAccount?: BondingCurveAccount;
@@ -178,7 +175,8 @@ export class PumpFunSDK {
       commitment,
       cachedData?.bondingCurveAccount,
       cachedData?.globalAccount,
-      cachedData?.forceCreateAssociatedTokenAccount
+      cachedData?.forceCreateAssociatedTokenAccount,
+      isTokenV2
     );
 
     let buyResults = await sendTx(
@@ -204,6 +202,7 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     finality: Finality = DEFAULT_FINALITY,
     skipPreflight: boolean = false,
+    isTokenV2: boolean = true,
     cachedData?: {
       blockHash?: string;
       bondingCurveAccount?: BondingCurveAccount;
@@ -217,7 +216,8 @@ export class PumpFunSDK {
       slippageBasisPoints,
       commitment,
       cachedData?.bondingCurveAccount,
-      cachedData?.globalAccount
+      cachedData?.globalAccount,
+      isTokenV2
     );
 
     let sellResults = await sendTx(
@@ -283,7 +283,8 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     bondingCurveAccount?: BondingCurveAccount | null,
     globalAccount?: GlobalAccount,
-    forceCreateAssociatedTokenAccount: boolean = false
+    forceCreateAssociatedTokenAccount: boolean = false,
+    isTokenV2: boolean = true,
   ) {
     if (!bondingCurveAccount) {
       bondingCurveAccount = await this.getBondingCurveAccount(mint, commitment);
@@ -300,7 +301,7 @@ export class PumpFunSDK {
     );
 
     let feeRecipient;
-    if (bondingCurveAccount.isMayhemMode) {
+    if (isTokenV2) {
       feeRecipient = staticAccounts.mayhemFeeRecipient;
     } else {
       if (!globalAccount) {
@@ -318,7 +319,7 @@ export class PumpFunSDK {
       commitment,
       forceCreateAssociatedTokenAccount,
       bondingCurveAccount.creator,
-      bondingCurveAccount.isMayhemMode
+      isTokenV2
     );
   }
 
@@ -330,7 +331,8 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     bondingCurveAccount: BondingCurveAccount,
     globalAccount: GlobalAccount,
-    forceCreateAssociatedTokenAccount: boolean = false
+    forceCreateAssociatedTokenAccount: boolean = false,
+    isTokenV2: boolean = true,
   ) {
     let buyAmount = bondingCurveAccount.getBuyPrice(buyAmountSol);
     let buyAmountWithSlippage = calculateWithSlippageBuy(
@@ -347,7 +349,7 @@ export class PumpFunSDK {
       commitment,
       forceCreateAssociatedTokenAccount,
       bondingCurveAccount.creator,
-      bondingCurveAccount.isMayhemMode
+      isTokenV2
     );
   }
 
@@ -359,7 +361,7 @@ export class PumpFunSDK {
     return creatorVault;
   }
 
-  //buy
+  // buy
   async getBuyInstructions(
     buyer: PublicKey,
     mint: PublicKey,
@@ -369,9 +371,9 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     forceCreateAssociatedTokenAccount = false,
     bondingCurveCreator: PublicKey,
-    isMayhemMode: boolean
+    isTokenV2: boolean
   ) {
-    const tokenProgram = isMayhemMode
+    const tokenProgram = isTokenV2
       ? TOKEN_2022_PROGRAM_ID
       : TOKEN_PROGRAM_ID;
 
@@ -408,7 +410,7 @@ export class PumpFunSDK {
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
       [
         bondingCurve.toBuffer(),
-        isMayhemMode ? staticBuffers.token2022 : staticBuffers.seed,
+        isTokenV2 ? staticBuffers.token2022 : staticBuffers.tokenProgram,
         mint.toBuffer(),
       ],
       staticAccounts.associatedProgramId
@@ -444,12 +446,12 @@ export class PumpFunSDK {
     commitment: Commitment = DEFAULT_COMMITMENT,
     createAssociatedTokenAccount = true,
     bondingCurveCreator: PublicKey,
-    isMayhemMode: boolean
+    isTokenV2: boolean
   ) {
     const [associatedUser] = PublicKey.findProgramAddressSync(
       [
         buyer.toBuffer(),
-        isMayhemMode ? staticBuffers.token2022 : staticBuffers.tokenProgram,
+        isTokenV2 ? staticBuffers.token2022 : staticBuffers.tokenProgram,
         mint.toBuffer(),
       ],
       ASSOCIATED_TOKEN_PROGRAM_ID
@@ -463,7 +465,7 @@ export class PumpFunSDK {
         associatedUser,
         buyer,
         mint,
-        isMayhemMode ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID
+        isTokenV2 ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID
       );
     }
 
@@ -481,7 +483,7 @@ export class PumpFunSDK {
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
       [
         bondingCurve.toBuffer(),
-        isMayhemMode ? staticBuffers.token2022 : staticBuffers.seed,
+        isTokenV2 ? staticBuffers.token2022 : staticBuffers.tokenProgram,
         mint.toBuffer(),
       ],
       staticAccounts.associatedProgramId
@@ -504,7 +506,7 @@ export class PumpFunSDK {
         isWritable: false,
       },
       {
-        pubkey: isMayhemMode ? staticAccounts.mayhemFeeRecipient : feeRecipient,
+        pubkey: isTokenV2 ? staticAccounts.mayhemFeeRecipient : feeRecipient,
         isSigner: false,
         isWritable: true,
       },
@@ -539,7 +541,7 @@ export class PumpFunSDK {
         isWritable: false,
       },
       {
-        pubkey: isMayhemMode
+        pubkey: isTokenV2
           ? staticAccounts.token2022Program
           : staticAccounts.tokenProgram,
         isSigner: false,
@@ -591,7 +593,7 @@ export class PumpFunSDK {
     return ataIns ? [ataIns, buyIns] : [buyIns];
   }
 
-  //sell
+  // sell
   async getSellInstructionsByTokenAmount(
     seller: PublicKey,
     mint: PublicKey,
@@ -599,7 +601,8 @@ export class PumpFunSDK {
     slippageBasisPoints: bigint = 500n,
     commitment: Commitment = DEFAULT_COMMITMENT,
     bondingCurveAccount?: BondingCurveAccount | null,
-    globalAccount?: GlobalAccount
+    globalAccount?: GlobalAccount,
+    isTokenV2: boolean = true
   ) {
     if (!bondingCurveAccount) {
       bondingCurveAccount = await this.getBondingCurveAccount(mint, commitment);
@@ -624,7 +627,7 @@ export class PumpFunSDK {
     );
 
     let feeRecipient;
-    if (bondingCurveAccount.isMayhemMode) {
+    if (isTokenV2) {
       feeRecipient = staticAccounts.mayhemFeeRecipient;
     } else {
       feeRecipient = globalAccount.feeRecipient;
@@ -636,11 +639,11 @@ export class PumpFunSDK {
       feeRecipient,
       sellTokenAmount,
       sellAmountWithSlippage,
-      bondingCurveAccount.isMayhemMode
+      isTokenV2
     );
   }
 
-  //sell sync
+  // sell sync
   getSellInstructionsByTokenAmountSync(
     seller: PublicKey,
     mint: PublicKey,
@@ -648,7 +651,8 @@ export class PumpFunSDK {
     slippageBasisPoints: bigint = 500n,
     commitment: Commitment = DEFAULT_COMMITMENT,
     bondingCurveAccount: BondingCurveAccount,
-    globalAccount: GlobalAccount
+    globalAccount: GlobalAccount,
+    isTokenV2: boolean = true,
   ) {
     let minSolOutput = bondingCurveAccount.getSellPrice(
       sellTokenAmount,
@@ -667,7 +671,7 @@ export class PumpFunSDK {
       sellTokenAmount,
       sellAmountWithSlippage,
       bondingCurveAccount.creator,
-      bondingCurveAccount.isMayhemMode
+      isTokenV2,
     );
   }
 
@@ -677,9 +681,9 @@ export class PumpFunSDK {
     feeRecipient: PublicKey,
     amount: bigint,
     minSolOutput: bigint,
-    isMayhemMode: boolean
+    isTokenV2: boolean
   ) {
-    const tokenProgram = isMayhemMode
+    const tokenProgram = isTokenV2
       ? TOKEN_2022_PROGRAM_ID
       : TOKEN_PROGRAM_ID;
 
@@ -698,7 +702,7 @@ export class PumpFunSDK {
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
       [
         bondingCurve.toBuffer(),
-        isMayhemMode ? staticBuffers.token2022 : staticBuffers.seed,
+        isTokenV2 ? staticBuffers.token2022 : staticBuffers.tokenProgram,
         mint.toBuffer(),
       ],
       staticAccounts.associatedProgramId
@@ -731,12 +735,12 @@ export class PumpFunSDK {
     amount: bigint,
     minSolOutput: bigint,
     bondingCurveCreator: PublicKey,
-    isMayhemMode: boolean
+    isTokenV2: boolean
   ) {
     const [associatedUser] = PublicKey.findProgramAddressSync(
       [
         seller.toBuffer(),
-        isMayhemMode ? staticBuffers.token2022 : staticBuffers.tokenProgram,
+        isTokenV2 ? staticBuffers.token2022 : staticBuffers.tokenProgram,
         mint.toBuffer(),
       ],
       ASSOCIATED_TOKEN_PROGRAM_ID
@@ -755,7 +759,7 @@ export class PumpFunSDK {
     const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
       [
         bondingCurve.toBuffer(),
-        isMayhemMode ? staticBuffers.token2022 : staticBuffers.seed,
+        isTokenV2 ? staticBuffers.token2022 : staticBuffers.tokenProgram,
         mint.toBuffer(),
       ],
       staticAccounts.associatedProgramId
@@ -773,7 +777,7 @@ export class PumpFunSDK {
         isWritable: false,
       },
       {
-        pubkey: isMayhemMode ? staticAccounts.mayhemFeeRecipient : feeRecipient,
+        pubkey: isTokenV2 ? staticAccounts.mayhemFeeRecipient : feeRecipient,
         isSigner: false,
         isWritable: true,
       },
@@ -813,7 +817,7 @@ export class PumpFunSDK {
         isWritable: true,
       },
       {
-        pubkey: isMayhemMode
+        pubkey: isTokenV2
           ? staticAccounts.token2022Program
           : staticAccounts.tokenProgram,
         isSigner: false,
