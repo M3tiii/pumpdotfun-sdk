@@ -392,7 +392,7 @@ export class PumpFunSDK {
       await getAccount(this.connection, associatedUser, commitment);
     } catch (e) {
       transaction.add(
-        createAssociatedTokenAccountInstruction(
+        createAssociatedTokenAccountIdempotentInstruction(
           buyer,
           associatedUser,
           buyer,
